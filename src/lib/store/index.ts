@@ -365,7 +365,7 @@ export const useMissionControl = create<MissionControlState>()(
       },
 
       // --- Wizard ---
-      wizardCompleted: false,
+      wizardCompleted: true,
       setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
 
       // --- Analytics ---
@@ -391,7 +391,7 @@ export const useMissionControl = create<MissionControlState>()(
           claws: [],
           connections: [],
           notifications: [],
-          wizardCompleted: false,
+          wizardCompleted: true,
           activeScreen: 'wizard',
         }),
 
