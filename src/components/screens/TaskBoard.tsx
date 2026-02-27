@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMissionControl } from '@/lib/store';
 import type { Task, TaskStatus, TaskPriority } from '@/lib/types';
 import { cn, toLabel, timeAgo, getPriorityColor, generateId } from '@/lib/utils';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, Download } from 'lucide-react';
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'idea', label: 'Ideas', color: '#c084fc' },
@@ -25,6 +25,28 @@ export function TaskBoard() {
   const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newStatus, setNewStatus] = useState<TaskStatus>('idea');
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+
+
+  const handleImportIdeas = async () => {
+    try {
+      const response = await fetch('/data/ideas.json');
+      const ideas = await response.json();
+      ideas.forEach((idea: any) => {
+        addTask({
+          title: idea.title,
+          description: idea.description,
+          status: idea.status || 'idea',
+          assignedTo: 'user',
+          priority: idea.priority || 'medium',
+          relatedFiles: [],
+          tags: idea.tags || [],
+        });
+      });
+      alert(`Imported ${ideas.length} ideas from workspace`);
+    } catch (err) {
+      alert('Failed to import ideas');
+    }
+  };
 
   const handleAddTask = () => {
     if (!newTitle.trim()) return;
@@ -60,9 +82,15 @@ export function TaskBoard() {
         <div>
           <p className="text-xs text-gray-500">{tasks.length} tasks · {tasks.filter(t => t.status === 'done').length} completed</p>
         </div>
-        <button onClick={() => setShowNewTask(!showNewTask)} className="btn-primary">
-          + New Task
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleImportIdeas} className="btn-ghost text-xs flex items-center gap-1">
+            <Download className="w-3 h-3" />
+            Import Ideas
+          </button>
+          <button onClick={() => setShowNewTask(!showNewTask)} className="btn-primary">
+            + New Task
+          </button>
+        </div>
       </div>
 
       {/* New Task Form */}
