@@ -2,42 +2,115 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useMissionControl } from '@/lib/store';
-import { Database, Upload, TrendingUp, CreditCard, Activity, ArrowUpRight, Zap, Layers, RefreshCw, X, ChevronRight } from 'lucide-react';
+import { Database, Upload, TrendingUp, CreditCard, Activity, ArrowUpRight, Zap, Layers, RefreshCw, X, ChevronRight, DollarSign, FileSpreadsheet } from 'lucide-react';
 
 interface ApiProvider {
   id: string;
   name: string;
   status: 'active' | 'inactive';
+  trackingMode: 'tokens' | 'dollars';
   balance?: number;
   usageLimit?: number;
   usageThisMonth: number;
+  tokensIn?: number;
+  tokensOut?: number;
   lastUpdated: string;
+}
+
+interface MonthlySpend {
+  month: string;
+  provider: string;
+  amount: number;
+  tokensIn?: number;
+  tokensOut?: number;
 }
 
 export function ApiUsage() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [monthlyData, setMonthlyData] = useState<MonthlySpend[]>([]);
 
-  // Mock data for initial view - eventually we can store this in Zustand
   const [providers, setProviders] = useState<ApiProvider[]>([
-    { id: 'openrouter', name: 'OpenRouter', status: 'active', balance: 45.20, usageThisMonth: 12.45, lastUpdated: new Date().toISOString() },
-    { id: 'google', name: 'Google Cloud (Gemini)', status: 'active', usageThisMonth: 0.00, lastUpdated: new Date().toISOString() },
-    { id: 'anthropic', name: 'Anthropic', status: 'active', balance: 50.00, usageThisMonth: 5.12, lastUpdated: new Date().toISOString() },
-    { id: 'moonshot', name: 'Moonshot AI', status: 'active', balance: 10.00, usageThisMonth: 1.20, lastUpdated: new Date().toISOString() },
+    { id: 'openrouter', name: 'OpenRouter', status: 'active', trackingMode: 'dollars', balance: 45.20, usageThisMonth: 12.45, lastUpdated: new Date().toISOString() },
+    { id: 'google', name: 'Google Cloud (Gemini)', status: 'active', trackingMode: 'tokens', tokensIn: 2400000, tokensOut: 890000, usageThisMonth: 8.50, lastUpdated: new Date().toISOString() },
+    { id: 'anthropic', name: 'Anthropic', status: 'active', trackingMode: 'tokens', tokensIn: 450000, tokensOut: 120000, usageThisMonth: 15.20, lastUpdated: new Date().toISOString() },
+    { id: 'moonshot', name: 'Moonshot AI', status: 'active', trackingMode: 'dollars', balance: 10.00, usageThisMonth: 12.25, lastUpdated: new Date().toISOString() },
   ]);
 
+  const parseExcel = (text: string): MonthlySpend[] | null => {
+    // Simple CSV/TSV parser for Excel exports
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return null;
+
+    // Try to detect format
+    const firstLine = lines[0];
+    const isMoonshotFormat = firstLine.includes('Time Range') && firstLine.includes('Deduction');
+    
+    if (isMoonshotFormat) {
+      // Parse Moonshot Excel format
+      const data: MonthlySpend[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split('\t'); // Tab-separated from Excel
+        if (cols.length >= 6) {
+          const timeRange = cols[0]?.replace(/"/g, '').trim();
+          const rechargeAmount = parseFloat(cols[4]?.replace(/"/g, '') || '0');
+          const voucherAmount = parseFloat(cols[5]?.replace(/"/g, '') || '0');
+          const totalAmount = rechargeAmount + voucherAmount;
+          
+          if (totalAmount > 0) {
+            data.push({
+              month: timeRange,
+              provider: 'Moonshot AI',
+              amount: totalAmount,
+            });
+          }
+        }
+      }
+      return data;
+    }
+    
+    return null;
+  };
+
   const handleFileUpload = useCallback((file: File) => {
-    // Basic CSV parser shell for API usage exports
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+    const isCSV = file.name.endsWith('.csv');
+    
+    if (!isExcel && !isCSV) {
+      alert('Please upload an Excel (.xlsx) or CSV file');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      // In a real implementation, we'd parse the CSV and update the state/store
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 3000);
+      const content = e.target?.result as string;
+      
+      if (isExcel) {
+        // For Excel, try to parse as tab-separated (when copied/pasted or exported)
+        const parsed = parseExcel(content);
+        if (parsed && parsed.length > 0) {
+          setMonthlyData(prev => [...prev, ...parsed]);
+          setUploadSuccess(true);
+          setTimeout(() => setUploadSuccess(false), 3000);
+          
+          // Update Moonshot provider with new data
+          setProviders(prev => prev.map(p => 
+            p.id === 'moonshot' 
+              ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + d.amount, 0), lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        }
+      } else {
+        // CSV handling for other providers
+        alert('CSV parsing for this provider coming soon. Please paste Excel data or wait for API auto-sync.');
+      }
     };
     reader.readAsText(file);
   }, []);
 
   const totalSpend = useMemo(() => providers.reduce((sum, p) => sum + p.usageThisMonth, 0), [providers]);
+  const dollarProviders = providers.filter(p => p.trackingMode === 'dollars');
+  const tokenProviders = providers.filter(p => p.trackingMode === 'tokens');
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -49,114 +122,139 @@ export function ApiUsage() {
             API Usage & Billing
           </h2>
           <p className="text-sm text-gray-400 mt-1">
-            Monitor spend and usage across all AI providers
+            Track spend across all AI providers — tokens or dollars
           </p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-panel p-5 border-l-4 border-l-purple-500">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-400">Total Monthly Spend</span>
             <TrendingUp className="w-4 h-4 text-purple-400" />
           </div>
           <p className="text-3xl font-bold text-white">${totalSpend.toFixed(2)}</p>
-          <p className="text-[10px] text-green-400 mt-1 flex items-center gap-1">
-            <ArrowUpRight className="w-3 h-3" /> +12% from last month
-          </p>
+          <p className="text-[10px] text-green-400 mt-1">All providers combined</p>
         </div>
         
         <div className="glass-panel p-5 border-l-4 border-l-blue-500">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">Active Providers</span>
+            <span className="text-xs text-gray-400">Token-Based</span>
             <Layers className="w-4 h-4 text-blue-400" />
           </div>
-          <p className="text-3xl font-bold text-white">{providers.filter(p => p.status === 'active').length}</p>
-          <p className="text-[10px] text-gray-500 mt-1">OpenRouter, Google, Anthropic, Moonshot</p>
+          <p className="text-3xl font-bold text-white">{tokenProviders.length}</p>
+          <p className="text-[10px] text-gray-500">Anthropic, Google Gemini</p>
         </div>
 
         <div className="glass-panel p-5 border-l-4 border-l-green-500">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">Total Credits Remaining</span>
-            <CreditCard className="w-4 h-4 text-green-400" />
+            <span className="text-xs text-gray-400">Dollar-Based</span>
+            <DollarSign className="w-4 h-4 text-green-400" />
           </div>
-          <p className="text-3xl font-bold text-white">$105.20</p>
-          <p className="text-[10px] text-gray-500 mt-1">Prepaid balance across 3 providers</p>
+          <p className="text-3xl font-bold text-white">{dollarProviders.length}</p>
+          <p className="text-[10px] text-gray-500">Moonshot, OpenRouter</p>
+        </div>
+
+        <div className="glass-panel p-5 border-l-4 border-l-yellow-500">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-400">Total Credits</span>
+            <CreditCard className="w-4 h-4 text-yellow-400" />
+          </div>
+          <p className="text-3xl font-bold text-white">${providers.reduce((s, p) => s + (p.balance || 0), 0).toFixed(0)}</p>
+          <p className="text-[10px] text-gray-500">Remaining balance</p>
         </div>
       </div>
 
-      {/* Upload & Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Provider List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="glass-panel p-0 overflow-hidden">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">Provider Status</h3>
-              <button className="text-[10px] text-blue-400 hover:underline flex items-center gap-1">
-                <RefreshCw className="w-3 h-3" /> Refresh Auto-Sync
-              </button>
+      {/* Provider List */}
+      <div className="glass-panel p-0 overflow-hidden">
+        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Provider Details</h3>
+          <div className="flex gap-2">
+            <span className="text-[10px] px-2 py-1 rounded bg-blue-500/20 text-blue-300">Token Tracking</span>
+            <span className="text-[10px] px-2 py-1 rounded bg-green-500/20 text-green-300">Dollar Tracking</span>
+          </div>
+        </div>
+        <div className="divide-y divide-white/5">
+          {providers.map(provider => (
+            <div key={provider.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${provider.trackingMode === 'tokens' ? 'bg-blue-500/10 border-blue-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                  <Zap className={`w-5 h-5 ${provider.trackingMode === 'tokens' ? 'text-blue-400' : 'text-green-400'}`} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-white">{provider.name}</h4>
+                  <p className="text-[10px] text-gray-500">
+                    {provider.trackingMode === 'tokens' 
+                      ? `In: ${(provider.tokensIn || 0).toLocaleString()} tokens` 
+                      : 'Dollar-based tracking'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-8">
+                {provider.tokensOut && (
+                  <div className="text-right hidden md:block">
+                    <p className="text-xs text-gray-400">Output</p>
+                    <p className="text-sm text-white">{(provider.tokensOut / 1000).toFixed(1)}k tokens</p>
+                  </div>
+                )}
+                <div className="text-right">
+                  <p className="text-sm font-bold text-white">${provider.usageThisMonth.toFixed(2)}</p>
+                  <p className="text-[10px] text-gray-500">Monthly</p>
+                </div>
+                {provider.balance !== undefined && (
+                  <div className="text-right w-24">
+                    <p className="text-sm font-bold text-green-400">${provider.balance.toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-500">Balance</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="divide-y divide-white/5">
-              {providers.map(provider => (
-                <div key={provider.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                      <Zap className={`w-5 h-5 ${provider.id === 'openrouter' ? 'text-yellow-400' : 'text-gray-400'}`} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">{provider.name}</h4>
-                      <p className="text-[10px] text-gray-500">Last updated: {new Date(provider.lastUpdated).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-8">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-white">${provider.usageThisMonth.toFixed(2)}</p>
-                      <p className="text-[10px] text-gray-500">Monthly Usage</p>
-                    </div>
-                    {provider.balance !== undefined && (
-                      <div className="text-right w-24">
-                        <p className="text-sm font-bold text-green-400">${provider.balance.toFixed(2)}</p>
-                        <p className="text-[10px] text-gray-500">Balance</p>
-                      </div>
-                    )}
-                    <button className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-white transition-all">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Upload Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div 
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files); files[0] && handleFileUpload(files[0]); }}
+          className={`glass-panel p-6 border-2 border-dashed transition-all ${isDragging ? 'border-blue-400 bg-blue-500/10' : uploadSuccess ? 'border-green-400 bg-green-500/10' : 'border-white/10'}`}
+        >
+          <FileSpreadsheet className={`w-10 h-10 mb-3 ${uploadSuccess ? 'text-green-400' : 'text-gray-500'}`} />
+          <h4 className="text-sm font-semibold text-white mb-1">
+            {uploadSuccess ? 'Upload Successful!' : 'Import Billing Excel'}
+          </h4>
+          <p className="text-xs text-gray-500 mb-4">
+            Supports Moonshot billing exports (.xlsx)<br/>
+            Other providers: API auto-sync coming Sunday
+          </p>
+          <label className="btn-primary w-full inline-flex items-center justify-center gap-2 cursor-pointer text-xs py-2">
+            <Upload className="w-3 h-3" />
+            Select Excel File
+            <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+          </label>
+        </div>
+
+        <div className="glass-panel p-5">
+          <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-blue-400" />
+            Recent Imports
+          </h4>
+          {monthlyData.length > 0 ? (
+            <div className="space-y-2">
+              {monthlyData.map((data, i) => (
+                <div key={i} className="flex justify-between items-center p-2 bg-white/5 rounded text-xs">
+                  <span className="text-gray-400">{data.month}</span>
+                  <span className="text-white font-medium">{data.provider}</span>
+                  <span className="text-green-400">${data.amount.toFixed(2)}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Upload Panel */}
-        <div className="space-y-4">
-          <div className="glass-panel p-6 border-2 border-dashed border-white/10 text-center">
-            <Upload className={`w-10 h-10 mx-auto mb-3 ${uploadSuccess ? 'text-green-400' : 'text-gray-500'}`} />
-            <h4 className="text-sm font-semibold text-white mb-1">Manual Billing Import</h4>
-            <p className="text-xs text-gray-500 mb-4">Upload usage CSVs from providers</p>
-            <label className="btn-primary w-full inline-flex items-center justify-center gap-2 cursor-pointer text-xs py-2">
-              <Upload className="w-3 h-3" />
-              Select File
-              <input type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-            </label>
-          </div>
-
-          <div className="glass-panel p-5">
-            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-400" />
-              Recent Alerts
-            </h4>
-            <div className="space-y-3">
-              <div className="text-xs p-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-200">
-                OpenRouter balance below $10.00
-              </div>
-              <div className="text-xs p-2 rounded bg-blue-500/10 border border-blue-500/20 text-blue-200">
-                Anthropic usage spike (+25% today)
-              </div>
-            </div>
-          </div>
+          ) : (
+            <p className="text-xs text-gray-500">No imports yet. Upload your Moonshot Excel to see data here.</p>
+          )}
         </div>
       </div>
     </div>
