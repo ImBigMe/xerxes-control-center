@@ -20,8 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        <title>Clawbot Mission Control</title>
-        <meta name="description" content="AI Agent Orchestration Dashboard — Manage your claw army." />
+        <title>XERXES Command Center</title>
+        <meta name="description" content="AI Agent Orchestration Dashboard — Orchestrate your AI workforce." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2306b6d4' opacity='0.2'/><path d='M30 60 Q50 25 70 60 Q60 55 50 58 Q40 55 30 60Z' fill='%2306b6d4'/><circle cx='38' cy='48' r='4' fill='%230a0a1a'/><circle cx='62' cy='48' r='4' fill='%230a0a1a'/></svg>" />
         <link

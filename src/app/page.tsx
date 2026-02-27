@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/screens/Dashboard';
@@ -8,10 +9,11 @@ import { ContentPipeline } from '@/components/screens/ContentPipeline';
 import { Calendar } from '@/components/screens/Calendar';
 import { MemoryScreen } from '@/components/screens/MemoryScreen';
 import { TeamStructure } from '@/components/screens/TeamStructure';
-import { DigitalOffice } from '@/components/screens/DigitalOffice';
+import { AnalyticsDashboard } from '@/components/screens/AnalyticsDashboard';
 import { ShellSelector } from '@/components/screens/ShellSelector';
 import { ClawManager } from '@/components/screens/ClawManager';
 import { SetupWizard } from '@/components/screens/SetupWizard';
+import { PasswordGate } from '@/components/screens/PasswordGate';
 import { useMissionControl } from '@/lib/store';
 
 const screens: Record<string, React.ComponentType> = {
@@ -21,16 +23,40 @@ const screens: Record<string, React.ComponentType> = {
   calendar: Calendar,
   memory: MemoryScreen,
   team: TeamStructure,
-  office: DigitalOffice,
+  analytics: AnalyticsDashboard,
   shells: ShellSelector,
   claws: ClawManager,
   wizard: SetupWizard,
 };
 
 export default function MissionControlPage() {
+  const [isClient, setIsClient] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
   const activeScreen = useMissionControl((s) => s.activeScreen);
   const wizardCompleted = useMissionControl((s) => s.wizardCompleted);
   const claws = useMissionControl((s) => s.claws);
+
+  useEffect(() => {
+    setIsClient(true);
+    // Check if already authenticated
+    const auth = localStorage.getItem('xerxes_authenticated') === 'true';
+    setIsAuthenticated(auth);
+  }, []);
+
+  const handleUnlock = () => {
+    setIsAuthenticated(true);
+  };
+
+  // Don't render until client-side to avoid hydration mismatch
+  if (!isClient) {
+    return null;
+  }
+
+  // Show password gate if not authenticated
+  if (!isAuthenticated) {
+    return <PasswordGate onUnlock={handleUnlock} />;
+  }
 
   // Gate: if no claws connected and wizard not completed, force wizard
   const needsSetup = !wizardCompleted && claws.length === 0;

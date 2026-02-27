@@ -9,12 +9,12 @@ import {
   CalendarDays,
   Brain,
   Users,
-  Building2,
+  BarChart3,
   Palette,
   Bot,
   Link,
   X,
-  Shell,
+  Shield,
 } from 'lucide-react';
 
 const navigation = [
@@ -24,7 +24,7 @@ const navigation = [
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'team', label: 'Team Structure', icon: Users },
-  { id: 'office', label: 'Digital Office', icon: Building2 },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 const settingsNav = [
@@ -63,11 +63,11 @@ export function Sidebar() {
         <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--glass-border)' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--glass-heavy)' }}>
-              <Shell className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+              <Shield className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white">Clawbot</h1>
-              <p className="text-xs" style={{ color: 'var(--accent-primary)' }}>Mission Control</p>
+              <h1 className="text-base font-bold text-white">XERXES</h1>
+              <p className="text-xs" style={{ color: 'var(--accent-primary)' }}>Command Center</p>
             </div>
           </div>
           <button

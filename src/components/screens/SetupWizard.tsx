@@ -65,7 +65,7 @@ interface PresetConfig {
 const PRESETS: PresetConfig[] = [
   {
     name: 'Local Dev Server',
-    description: 'Connect to a Claw Bot running on localhost',
+    description: 'Connect to an AI agent running on localhost',
     icon: Monitor,
     type: 'websocket',
     port: 8080,
@@ -74,7 +74,7 @@ const PRESETS: PresetConfig[] = [
   },
   {
     name: 'Production API',
-    description: 'Connect to a production Claw Bot via HTTPS REST API',
+    description: 'Connect to a production AI agent via HTTPS REST API',
     icon: Globe,
     type: 'rest',
     port: 443,
@@ -283,15 +283,15 @@ export function SetupWizard() {
     addConnection(connection);
 
     addMemory({
-      title: `Claw Bot Connected: ${botName}`,
-      content: `New Claw Bot "${botName}" configured with ${connType.toUpperCase()} connection to ${endpoint}:${port}${path}. ${useTls ? 'TLS enabled.' : 'No TLS.'} ${authToken ? 'Authenticated.' : 'No auth.'}`,
+      title: `AI agent Connected: ${botName}`,
+      content: `New AI agent "${botName}" configured with ${connType.toUpperCase()} connection to ${endpoint}:${port}${path}. ${useTls ? 'TLS enabled.' : 'No TLS.'} ${authToken ? 'Authenticated.' : 'No auth.'}`,
       category: 'context',
       source: 'system',
       tags: ['connection', 'setup', connType],
     });
 
     addNotification({
-      title: 'Claw Bot Connected',
+      title: 'AI agent Connected',
       message: `${botName} has been configured and is ready to connect.`,
       type: 'success',
     });
@@ -308,10 +308,10 @@ export function SetupWizard() {
         <Shell className="w-16 h-16 mx-auto animate-float" style={{ color: 'var(--accent-primary)' }} />
       </div>
       <h2 className="text-2xl font-bold text-white mb-4">
-        Connect Your Claw Bot
+        Connect Your AI agent
       </h2>
       <p className="text-gray-400 mb-8 leading-relaxed">
-        This wizard will guide you through connecting a Claw Bot instance to your Mission Control.
+        This wizard will guide you through connecting an AI agent instance to your Command Center.
         Whether it&apos;s a local development server, a cloud-hosted AI agent,
         an ESP32 hardware controller, or an MQTT IoT device &mdash; we&apos;ll get it connected.
       </p>
@@ -320,7 +320,7 @@ export function SetupWizard() {
         <h3 className="text-sm font-semibold text-white mb-4">What you&apos;ll need:</h3>
         <div className="space-y-3">
           {[
-            { icon: LinkIcon, text: 'The endpoint URL or IP address of your Claw Bot' },
+            { icon: LinkIcon, text: 'The endpoint URL or IP address of your AI agent' },
             { icon: Key, text: 'Authentication token (if your bot requires it)' },
             { icon: Radio, text: 'The protocol your bot uses (WebSocket, REST API, or MQTT)' },
             { icon: Wifi, text: 'Network access to the bot (same network or public endpoint)' },
@@ -360,7 +360,7 @@ export function SetupWizard() {
     <div className="max-w-3xl mx-auto">
       <h2 className="text-xl font-bold text-white mb-2">Choose a Setup Preset</h2>
       <p className="text-sm text-gray-400 mb-6">
-        Select a preset that matches your Claw Bot setup, or choose &quot;Custom Setup&quot; to configure everything manually.
+        Select a preset that matches your AI agent setup, or choose &quot;Custom Setup&quot; to configure everything manually.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -417,7 +417,7 @@ export function SetupWizard() {
     <div className="max-w-2xl mx-auto">
       <h2 className="text-xl font-bold text-white mb-2">Configure Endpoint</h2>
       <p className="text-sm text-gray-400 mb-6">
-        Enter the connection details for your Claw Bot.
+        Enter the connection details for your AI agent.
         {selectedPreset && selectedPreset.name !== 'Custom Setup' && (
           <span style={{ color: 'var(--accent-primary)' }}> Preset: {selectedPreset.name}</span>
         )}
@@ -560,7 +560,7 @@ export function SetupWizard() {
     <div className="max-w-2xl mx-auto">
       <h2 className="text-xl font-bold text-white mb-2">Test Connection</h2>
       <p className="text-sm text-gray-400 mb-6">
-        Let&apos;s verify that your Claw Bot is reachable and responding correctly.
+        Let&apos;s verify that your AI agent is reachable and responding correctly.
       </p>
 
       {/* Connection Summary */}
@@ -712,9 +712,9 @@ export function SetupWizard() {
 
   const renderBotConfig = () => (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold text-white mb-2">Configure Your Claw Bot</h2>
+      <h2 className="text-xl font-bold text-white mb-2">Configure Your AI agent</h2>
       <p className="text-sm text-gray-400 mb-6">
-        Give your Claw Bot a name and identity in Mission Control.
+        Give your AI agent a name and identity in Command Center.
       </p>
 
       <div className="glass-panel p-6 space-y-6">
@@ -725,7 +725,7 @@ export function SetupWizard() {
             type="text"
             value={botName}
             onChange={(e) => setBotName(e.target.value)}
-            placeholder="e.g., Clawbot Alpha, Home Lab Bot, Production Agent"
+            placeholder="e.g., XERXES Agent Alpha, Home Lab Bot, Production Agent"
             className="input-glass"
           />
         </div>
@@ -802,8 +802,8 @@ export function SetupWizard() {
       </h2>
       <p className="text-sm text-gray-400 mb-8">
         {testResult?.success
-          ? 'Your Claw Bot is configured and the connection was verified successfully.'
-          : 'Your Claw Bot is configured. You can connect to it from the Claw Manager.'}
+          ? 'Your AI agent is configured and the connection was verified successfully.'
+          : 'Your AI agent is configured. You can connect to it from the Claw Manager.'}
       </p>
 
       {/* Summary Cards */}

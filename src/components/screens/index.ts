@@ -4,7 +4,7 @@ export { ContentPipeline } from './ContentPipeline';
 export { Calendar } from './Calendar';
 export { MemoryScreen } from './MemoryScreen';
 export { TeamStructure } from './TeamStructure';
-export { DigitalOffice } from './DigitalOffice';
+export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ShellSelector } from './ShellSelector';
 export { ClawManager } from './ClawManager';
 export { SetupWizard } from './SetupWizard';

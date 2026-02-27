@@ -92,6 +92,10 @@ interface MissionControlState {
 
   // Wizard state
   wizardCompleted: boolean;
+
+  // Password Gate
+  isAuthenticated: boolean;
+  setAuthenticated: (auth: boolean) => void;
   setWizardCompleted: (completed: boolean) => void;
 
   // Reset
@@ -323,6 +327,10 @@ export const useMissionControl = create<MissionControlState>()(
       // --- Wizard ---
       wizardCompleted: false,
       setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
+
+      // --- Password Gate ---
+      isAuthenticated: false,
+      setAuthenticated: (auth) => set({ isAuthenticated: auth }),
 
       // --- Reset ---
       resetToEmpty: () =>

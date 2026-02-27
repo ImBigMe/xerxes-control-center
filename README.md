@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="Clawbot Mission Control" width="200" />
+  <img src="docs/assets/logo.png" alt="XERXES Command Center" width="200" />
 </p>
 
-<h1 align="center">Clawbot Mission Control</h1>
+<h1 align="center">XERXES Command Center</h1>
 
 <p align="center">
-  <strong>AI Agent Orchestration Dashboard</strong><br/>
+  <strong>XERXES AI Orchestration Dashboard</strong><br/>
   Connect your Claw Bots. Deploy agents. Take control.
 </p>
 
@@ -31,9 +31,9 @@
 
 ---
 
-## What is Clawbot Mission Control?
+## What is XERXES Command Center?
 
-**Clawbot Mission Control** is an open-source AI agent orchestration dashboard. It serves as the command center for your AI workforce -- a persistent workspace where you connect Claw Bot instances, deploy AI agents, manage tasks, content pipelines, schedules, and memories.
+**XERXES Command Center** is an open-source AI agent orchestration dashboard. It serves as the command center for your AI workforce -- a persistent workspace where you connect Claw Bot instances, deploy AI agents, manage tasks, content pipelines, schedules, and memories.
 
 **Current State (v1.3.0 -- 26. February 2026):**
 
@@ -622,7 +622,7 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 
 ## Changelog
 
-All changes to Clawbot Mission Control, listed in reverse chronological order.
+All changes to XERXES Command Center, listed in reverse chronological order.
 
 ### v1.3.0 -- 2026-02-26
 
@@ -664,7 +664,7 @@ All changes to Clawbot Mission Control, listed in reverse chronological order.
 |--------|--------|-------------|
 | `b450fab` | BEKO2210 | Update logo image source in README.md |
 | `a1a5f6f` | BEKO2210 | Add files via upload (initial assets) |
-| `40619d8` | Claude | **feat: Clawbot Mission Control -- AI Agent Orchestration Dashboard** -- Initial release with 10 screens (Dashboard, Task Board, Content Pipeline, Calendar, Memory Bank, Team Structure, Digital Office, Shell Themes, Claw Manager, Setup Wizard). 4 built-in shell themes (Deep Space, Cyber Neon, Ocean Depths, Ember Forge). Multi-Claw architecture. Dark glassmorphism UI. Zustand state management with localStorage persistence. |
+| `40619d8` | Claude | **feat: XERXES Command Center -- XERXES AI Orchestration Dashboard** -- Initial release with 10 screens (Dashboard, Task Board, Content Pipeline, Calendar, Memory Bank, Team Structure, Digital Office, Shell Themes, Claw Manager, Setup Wizard). 4 built-in shell themes (Deep Space, Cyber Neon, Ocean Depths, Ember Forge). Multi-Claw architecture. Dark glassmorphism UI. Zustand state management with localStorage persistence. |
 
 ---
 
