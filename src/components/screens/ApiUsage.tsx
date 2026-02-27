@@ -49,7 +49,9 @@ export function ApiUsage() {
     console.log('First line:', text?.split('\n')[0]);
     
     // Simple CSV/TSV parser for Excel exports
-    const lines = text.trim().split('\n');
+    // Remove BOM if present and normalize line endings
+    const cleanText = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = cleanText.trim().split('\n');
     console.log('Total lines:', lines.length);
     if (lines.length < 2) {
       console.log('ERROR: Less than 2 lines');
@@ -57,7 +59,7 @@ export function ApiUsage() {
     }
 
     // Try to detect format
-    const firstLine = lines[0];
+    const firstLine = lines[0]?.trim();
     console.log('Detecting format...');
     console.log('First line:', firstLine);
     
