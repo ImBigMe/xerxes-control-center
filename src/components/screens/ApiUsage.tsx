@@ -45,6 +45,72 @@ export function ApiUsage() {
     // Try to detect format
     const firstLine = lines[0];
     const isMoonshotFormat = firstLine.includes('Time Range') && firstLine.includes('Deduction');
+    const isAnthropicCostFormat = firstLine.includes('usage_date_utc') && firstLine.includes('cost_usd');
+    const isAnthropicTokenFormat = firstLine.includes('usage_date_utc') && firstLine.includes('usage_input_tokens');
+    
+    if (isAnthropicCostFormat) {
+      // Parse Anthropic cost CSV
+      const data: MonthlySpend[] = [];
+      const dailyTotals: Record<string, number> = {};
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length >= 9) {
+          const date = cols[0]?.trim();
+          const cost = parseFloat(cols[7]?.trim() || '0');
+          if (date && cost > 0) {
+            dailyTotals[date] = (dailyTotals[date] || 0) + cost;
+          }
+        }
+      }
+      
+      Object.entries(dailyTotals).forEach(([date, amount]) => {
+        data.push({ month: date, provider: 'Anthropic', amount });
+      });
+      
+      return data;
+    }
+    
+    if (isAnthropicTokenFormat) {
+      // Parse Anthropic token CSV - aggregate by date
+      const data: MonthlySpend[] = [];
+      const dailyTotals: Record<string, { tokensIn: number; tokensOut: number }> = {};
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length >= 12) {
+          const date = cols[0]?.trim();
+          const inputNoCache = parseInt(cols[6]?.trim() || '0');
+          const inputCacheWrite5m = parseInt(cols[7]?.trim() || '0');
+          const inputCacheWrite1h = parseInt(cols[8]?.trim() || '0');
+          const inputCacheRead = parseInt(cols[9]?.trim() || '0');
+          const outputTokens = parseInt(cols[10]?.trim() || '0');
+          
+          const totalIn = inputNoCache + inputCacheWrite5m + inputCacheWrite1h + inputCacheRead;
+          const totalOut = outputTokens;
+          
+          if (date) {
+            if (!dailyTotals[date]) {
+              dailyTotals[date] = { tokensIn: 0, tokensOut: 0 };
+            }
+            dailyTotals[date].tokensIn += totalIn;
+            dailyTotals[date].tokensOut += totalOut;
+          }
+        }
+      }
+      
+      Object.entries(dailyTotals).forEach(([date, tokens]) => {
+        data.push({ 
+          month: date, 
+          provider: 'Anthropic', 
+          amount: 0, // Unknown cost from token file
+          tokensIn: tokens.tokensIn,
+          tokensOut: tokens.tokensOut
+        });
+      });
+      
+      return data;
+    }
     
     if (isMoonshotFormat) {
       // Parse Moonshot Excel format
@@ -83,17 +149,29 @@ export function ApiUsage() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const content = e.target?.result as string;
+      const fileContent = e.target?.result as string;
       
-      if (isExcel) {
-        // For Excel, try to parse as tab-separated (when copied/pasted or exported)
-        const parsed = parseExcel(content);
-        if (parsed && parsed.length > 0) {
-          setMonthlyData(prev => [...prev, ...parsed]);
-          setUploadSuccess(true);
-          setTimeout(() => setUploadSuccess(false), 3000);
-          
-          // Update Moonshot provider with new data
+      // Try to parse regardless of file type
+      const parsed = parseExcel(fileContent);
+      if (parsed && parsed.length > 0) {
+        setMonthlyData(prev => [...prev, ...parsed]);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 3000);
+        
+        // Update provider based on detected format
+        const isAnthropic = fileContent.includes('usage_date_utc') && fileContent.includes('claude');
+        const isMoonshot = fileContent.includes('Time Range') || fileContent.includes('Moonshot');
+        
+        if (isAnthropic) {
+          setProviders(prev => prev.map(p => 
+            p.id === 'anthropic' 
+              ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + (d.amount || 0), 0) || p.usageThisMonth, 
+                  tokensIn: parsed.reduce((sum, d) => sum + (d.tokensIn || 0), 0) || p.tokensIn,
+                  tokensOut: parsed.reduce((sum, d) => sum + (d.tokensOut || 0), 0) || p.tokensOut,
+                  lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        } else if (isMoonshot) {
           setProviders(prev => prev.map(p => 
             p.id === 'moonshot' 
               ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + d.amount, 0), lastUpdated: new Date().toISOString() }
@@ -101,8 +179,7 @@ export function ApiUsage() {
           ));
         }
       } else {
-        // CSV handling for other providers
-        alert('CSV parsing for this provider coming soon. Please paste Excel data or wait for API auto-sync.');
+        alert('Could not parse file. Please check the format and try again.');
       }
     };
     reader.readAsText(file);
@@ -227,8 +304,8 @@ export function ApiUsage() {
             {uploadSuccess ? 'Upload Successful!' : 'Import Billing Excel'}
           </h4>
           <p className="text-xs text-gray-500 mb-4">
-            Supports Moonshot billing exports (.xlsx)<br/>
-            Other providers: API auto-sync coming Sunday
+            Supports Anthropic & Moonshot CSV exports<br/>
+            Google/OpenRouter: API auto-sync coming Sunday
           </p>
           <label className="btn-primary w-full inline-flex items-center justify-center gap-2 cursor-pointer text-xs py-2">
             <Upload className="w-3 h-3" />
