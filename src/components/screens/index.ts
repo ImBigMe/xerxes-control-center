@@ -8,3 +8,4 @@ export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ShellSelector } from './ShellSelector';
 export { ClawManager } from './ClawManager';
 export { SetupWizard } from './SetupWizard';
+export { ApiUsage } from './ApiUsage';

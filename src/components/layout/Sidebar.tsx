@@ -7,7 +7,7 @@ import {
   KanbanSquare,
   Play,
   CalendarDays,
-  Brain,
+  Brain, Database,
   Users,
   BarChart3,
   Palette,
@@ -22,7 +22,7 @@ const navigation = [
   { id: 'tasks', label: 'Task Board', icon: KanbanSquare },
   { id: 'pipeline', label: 'Content Pipeline', icon: Play },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
-  { id: 'memory', label: 'Memory', icon: Brain },
+  { id: 'memory', label: 'Memory', icon: Brain }, { id: 'api', label: 'API Usage', icon: Database }, { id: 'api', label: 'API Usage', icon: Database },
   { id: 'team', label: 'Team Structure', icon: Users },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];

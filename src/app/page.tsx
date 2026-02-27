@@ -12,6 +12,7 @@ import { TeamStructure } from '@/components/screens/TeamStructure';
 import { AnalyticsDashboard } from '@/components/screens/AnalyticsDashboard';
 import { ShellSelector } from '@/components/screens/ShellSelector';
 import { ClawManager } from '@/components/screens/ClawManager';
+import { ApiUsage } from '@/components/screens/ApiUsage';
 import { SetupWizard } from '@/components/screens/SetupWizard';
 import { PasswordGate } from '@/components/screens/PasswordGate';
 import { useMissionControl } from '@/lib/store';
@@ -21,7 +22,7 @@ const screens: Record<string, React.ComponentType> = {
   tasks: TaskBoard,
   pipeline: ContentPipeline,
   calendar: Calendar,
-  memory: MemoryScreen,
+  memory: MemoryScreen, api: ApiUsage,
   team: TeamStructure,
   analytics: AnalyticsDashboard,
   shells: ShellSelector,

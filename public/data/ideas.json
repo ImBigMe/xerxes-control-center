@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Newsletter: Failed Startup Post-mortems",
+    "description": "Covers failed startup post-mortems and what they learned",
+    "status": "idea",
+    "priority": "medium",
+    "tags": ["content", "business"]
+  },
+  {
+    "title": "Browser extension: Website Time Machine",
+    "description": "Shows you the 'original' version of any website from 10 years ago",
+    "status": "idea",
+    "priority": "medium",
+    "tags": ["tool", "web"]
+  },
+  {
+    "title": "GitHub Knowledge Base CLI",
+    "description": "Converts any GitHub repo into a searchable local knowledge base with AI summaries",
+    "status": "idea",
+    "priority": "high",
+    "tags": ["tool", "dev"]
+  },
+  {
+    "title": "Test idea: Serendipity engine",
+    "description": "Test idea for the serendipity engine",
+    "status": "idea",
+    "priority": "low",
+    "tags": ["test"]
+  }
+]
