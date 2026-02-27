@@ -277,10 +277,26 @@ export function ApiUsage() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const fileContent = e.target?.result as string;
+      let fileContent = '';
+      let parsed: MonthlySpend[] | null = null;
       
-      // Try to parse regardless of file type
-      const parsed = parseExcel(fileContent);
+      if (isExcel) {
+        // Parse Excel binary file
+        const data = e.target?.result as ArrayBuffer;
+        if (data) {
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+          fileContent = jsonData.map(row => row.join(',')).join('\n');
+          console.log('Excel parsed, rows:', jsonData.length);
+          console.log('First row:', jsonData[0]);
+          parsed = parseExcel(fileContent);
+        }
+      } else {
+        // Parse CSV text file
+        fileContent = e.target?.result as string;
+        parsed = parseExcel(fileContent);
+      }
       if (parsed && parsed.length > 0) {
         // Deduplicate against existing data
         const uniqueData = dedupeData(parsed, monthlyData);
@@ -365,7 +381,11 @@ export function ApiUsage() {
         console.error('===================');
       }
     };
-    reader.readAsText(file);
+    if (isExcel) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   }, []);
 
   const totalSpend = useMemo(() => providers.reduce((sum, p) => sum + p.usageThisMonth, 0), [providers]);
