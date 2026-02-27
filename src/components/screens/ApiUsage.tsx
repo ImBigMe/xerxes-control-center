@@ -30,6 +30,8 @@ export function ApiUsage() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [monthlyData, setMonthlyData] = useState<MonthlySpend[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Set<string>>(new Set());
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const [providers, setProviders] = useState<ApiProvider[]>([
     { id: 'openrouter', name: 'OpenRouter', status: 'active', trackingMode: 'dollars', balance: 45.20, usageThisMonth: 12.45, lastUpdated: new Date().toISOString() },
@@ -210,6 +212,38 @@ export function ApiUsage() {
     return null;
   };
 
+
+  // Generate a simple hash of file content to detect duplicates
+  const generateHash = (content: string): string => {
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(16);
+  };
+
+  // Check for duplicate entries in data
+  const dedupeData = (newData: MonthlySpend[], existingData: MonthlySpend[]): MonthlySpend[] => {
+    const seen = new Set<string>();
+    
+    // Add existing entries to seen set
+    existingData.forEach(d => {
+      seen.add(`${d.month}-${d.provider}-${d.amount}`);
+    });
+    
+    // Filter out duplicates from new data
+    return newData.filter(d => {
+      const key = `${d.month}-${d.provider}-${d.amount}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  };
+
   const handleFileUpload = useCallback((file: File) => {
     const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
     const isCSV = file.name.endsWith('.csv');
@@ -226,7 +260,24 @@ export function ApiUsage() {
       // Try to parse regardless of file type
       const parsed = parseExcel(fileContent);
       if (parsed && parsed.length > 0) {
-        setMonthlyData(prev => [...prev, ...parsed]);
+        // Deduplicate against existing data
+        const uniqueData = dedupeData(parsed, monthlyData);
+        
+        if (uniqueData.length === 0) {
+          setDuplicateWarning('All entries in this file are already imported.');
+          setTimeout(() => setDuplicateWarning(null), 3000);
+          return;
+        }
+        
+        if (uniqueData.length < parsed.length) {
+          setDuplicateWarning(`${parsed.length - uniqueData.length} duplicate entries skipped.`);
+          setTimeout(() => setDuplicateWarning(null), 3000);
+        }
+        
+        // Track this file as uploaded
+        setUploadedFiles(prev => new Set(prev).add(generateHash(file.name + fileContent.slice(0, 1000))));
+        
+        setMonthlyData(prev => [...prev, ...uniqueData]);
         setUploadSuccess(true);
         setTimeout(() => setUploadSuccess(false), 3000);
         
