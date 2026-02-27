@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useMissionControl } from '@/lib/store';
 import { Database, Upload, TrendingUp, CreditCard, Activity, ArrowUpRight, Zap, Layers, RefreshCw, X, ChevronRight, DollarSign, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ApiProvider {
   id: string;
