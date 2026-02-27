@@ -112,6 +112,77 @@ export function ApiUsage() {
       return data;
     }
     
+    // OpenRouter daily summary format
+    const isOpenRouterDaily = firstLine.includes('Date') && firstLine.includes('Slug') && firstLine.includes('Usage');
+    if (isOpenRouterDaily) {
+      const data: MonthlySpend[] = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length >= 8) {
+          const date = cols[0]?.replace(/"/g, '').trim();
+          const slug = cols[1]?.replace(/"/g, '').trim();
+          const usage = parseFloat(cols[2]?.replace(/"/g, '') || '0');
+          const requests = parseInt(cols[4]?.replace(/"/g, '') || '0');
+          const promptTokens = parseInt(cols[5]?.replace(/"/g, '') || '0');
+          const completionTokens = parseInt(cols[6]?.replace(/"/g, '') || '0');
+          
+          if (date && usage > 0) {
+            data.push({
+              month: date,
+              provider: 'OpenRouter',
+              amount: usage,
+              tokensIn: promptTokens,
+              tokensOut: completionTokens,
+            });
+          }
+        }
+      }
+      
+      return data;
+    }
+    
+    // OpenRouter detailed format (per-request)
+    const isOpenRouterDetailed = firstLine.includes('generation_id') && firstLine.includes('cost_total');
+    if (isOpenRouterDetailed) {
+      const data: MonthlySpend[] = [];
+      const dailyTotals: Record<string, { amount: number; tokensIn: number; tokensOut: number }> = {};
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length >= 20) {
+          const createdAt = cols[1]?.trim();
+          const cost = parseFloat(cols[2]?.trim() || '0');
+          const promptTokens = parseInt(cols[8]?.trim() || '0');
+          const completionTokens = parseInt(cols[9]?.trim() || '0');
+          
+          // Extract date from created_at (2026-02-25 15:07:01.195)
+          const date = createdAt?.split(' ')[0];
+          
+          if (date && cost > 0) {
+            if (!dailyTotals[date]) {
+              dailyTotals[date] = { amount: 0, tokensIn: 0, tokensOut: 0 };
+            }
+            dailyTotals[date].amount += cost;
+            dailyTotals[date].tokensIn += promptTokens;
+            dailyTotals[date].tokensOut += completionTokens;
+          }
+        }
+      }
+      
+      Object.entries(dailyTotals).forEach(([date, totals]) => {
+        data.push({
+          month: date,
+          provider: 'OpenRouter',
+          amount: totals.amount,
+          tokensIn: totals.tokensIn,
+          tokensOut: totals.tokensOut,
+        });
+      });
+      
+      return data;
+    }
+    
     if (isMoonshotFormat) {
       // Parse Moonshot Excel format
       const data: MonthlySpend[] = [];
@@ -160,12 +231,41 @@ export function ApiUsage() {
         
         // Update provider based on detected format
         const isAnthropic = fileContent.includes('usage_date_utc') && fileContent.includes('claude');
+        const isOpenRouter = fileContent.includes('generation_id') || (fileContent.includes('OpenRouter') || fileContent.includes('Slug'));
         const isMoonshot = fileContent.includes('Time Range') || fileContent.includes('Moonshot');
+        
         
         if (isAnthropic) {
           setProviders(prev => prev.map(p => 
-            p.id === 'anthropic' 
+            p.id === 'anthropic'
               ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + (d.amount || 0), 0) || p.usageThisMonth, 
+                  tokensIn: parsed.reduce((sum, d) => sum + (d.tokensIn || 0), 0) || p.tokensIn,
+                  tokensOut: parsed.reduce((sum, d) => sum + (d.tokensOut || 0), 0) || p.tokensOut,
+                  lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        } else if (isOpenRouter) {
+          setProviders(prev => prev.map(p => 
+            p.id === 'openrouter'
+              ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + d.amount, 0) || p.usageThisMonth,
+                  tokensIn: parsed.reduce((sum, d) => sum + (d.tokensIn || 0), 0) || p.tokensIn,
+                  tokensOut: parsed.reduce((sum, d) => sum + (d.tokensOut || 0), 0) || p.tokensOut,
+                  lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        } else if (isMoonshot) {
+          setProviders(prev => prev.map(p => 
+            p.id === 'moonshot' 
+              ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + (d.amount || 0), 0) || p.usageThisMonth, 
+                  tokensIn: parsed.reduce((sum, d) => sum + (d.tokensIn || 0), 0) || p.tokensIn,
+                  tokensOut: parsed.reduce((sum, d) => sum + (d.tokensOut || 0), 0) || p.tokensOut,
+                  lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        } else if (isOpenRouter) {
+          setProviders(prev => prev.map(p => 
+            p.id === 'openrouter' 
+              ? { ...p, usageThisMonth: parsed.reduce((sum, d) => sum + d.amount, 0) || p.usageThisMonth,
                   tokensIn: parsed.reduce((sum, d) => sum + (d.tokensIn || 0), 0) || p.tokensIn,
                   tokensOut: parsed.reduce((sum, d) => sum + (d.tokensOut || 0), 0) || p.tokensOut,
                   lastUpdated: new Date().toISOString() }
