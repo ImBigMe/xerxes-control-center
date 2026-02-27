@@ -22,6 +22,39 @@ import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
 import { defaultAgents } from '@/agents/defaults';
 
+interface TwitterMetrics {
+  date: string;
+  impressions: number;
+  likes: number;
+  engagements: number;
+  bookmarks: number;
+  shares: number;
+  newFollows: number;
+  unfollows: number;
+  replies: number;
+  reposts: number;
+  profileVisits: number;
+  posts: number;
+  videoViews: number;
+  mediaViews: number;
+}
+
+interface TweetDetail {
+  id: string;
+  date: string;
+  text: string;
+  link: string;
+  impressions: number;
+  likes: number;
+  engagements: number;
+  bookmarks: number;
+  shares: number;
+  newFollows: number;
+  replies: number;
+  reposts: number;
+  profileVisits: number;
+}
+
 // --- Mission Control Store ---
 
 interface MissionControlState {
@@ -92,6 +125,13 @@ interface MissionControlState {
 
   // Wizard state
   wizardCompleted: boolean;
+
+  // Analytics
+  analyticsDaily: TwitterMetrics[];
+  analyticsTweets: TweetDetail[];
+  setAnalyticsDaily: (data: TwitterMetrics[]) => void;
+  setAnalyticsTweets: (data: TweetDetail[]) => void;
+  clearAnalytics: () => void;
 
   // Password Gate
   isAuthenticated: boolean;
@@ -328,6 +368,14 @@ export const useMissionControl = create<MissionControlState>()(
       wizardCompleted: false,
       setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
 
+      // --- Analytics ---
+      analyticsDaily: [],
+      analyticsTweets: [],
+
+      setAnalyticsDaily: (data) => set({ analyticsDaily: data }),
+      setAnalyticsTweets: (data) => set({ analyticsTweets: data }),
+      clearAnalytics: () => set({ analyticsDaily: [], analyticsTweets: [] }),
+
       // --- Password Gate ---
       isAuthenticated: false,
       setAuthenticated: (auth) => set({ isAuthenticated: auth }),
@@ -365,6 +413,8 @@ export const useMissionControl = create<MissionControlState>()(
       name: 'clawbot-mission-control',
       partialize: (state) => ({
         activeShellId: state.activeShellId,
+        analyticsDaily: state.analyticsDaily,
+        analyticsTweets: state.analyticsTweets,
         tasks: state.tasks,
         contentItems: state.contentItems,
         events: state.events,
