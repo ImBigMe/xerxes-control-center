@@ -32,6 +32,7 @@ export function ApiUsage() {
   const [monthlyData, setMonthlyData] = useState<MonthlySpend[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<Set<string>>(new Set());
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [providers, setProviders] = useState<ApiProvider[]>([
     { id: 'openrouter', name: 'OpenRouter', status: 'active', trackingMode: 'dollars', balance: 45.20, usageThisMonth: 12.45, lastUpdated: new Date().toISOString() },
@@ -331,7 +332,16 @@ export function ApiUsage() {
           ));
         }
       } else {
-        alert('Could not parse file. Please check the format and try again.');
+        // Show error in UI
+        const errorText = `Failed to parse ${file.name}. Check console for details.`;
+        setErrorMsg(errorText);
+        setTimeout(() => setErrorMsg(null), 5000);
+        console.error('=== PARSE ERROR ===');
+        console.error('File:', file.name);
+        console.error('Type:', file.type);
+        console.error('Size:', file.size);
+        console.error('Content preview (first 500 chars):', fileContent?.slice(0, 500));
+        console.error('===================');
       }
     };
     reader.readAsText(file);
@@ -449,11 +459,11 @@ export function ApiUsage() {
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files); files[0] && handleFileUpload(files[0]); }}
-          className={`glass-panel p-6 border-2 border-dashed transition-all ${isDragging ? 'border-blue-400 bg-blue-500/10' : uploadSuccess ? 'border-green-400 bg-green-500/10' : 'border-white/10'}`}
+          className={`glass-panel p-6 border-2 border-dashed transition-all ${isDragging ? 'border-blue-400 bg-blue-500/10' : errorMsg ? 'border-red-400 bg-red-500/10' : uploadSuccess ? 'border-green-400 bg-green-500/10' : 'border-white/10'}`}
         >
-          <FileSpreadsheet className={`w-10 h-10 mb-3 ${uploadSuccess ? 'text-green-400' : 'text-gray-500'}`} />
-          <h4 className="text-sm font-semibold text-white mb-1">
-            {uploadSuccess ? 'Upload Successful!' : 'Import Billing Excel'}
+          <FileSpreadsheet className={`w-10 h-10 mb-3 ${errorMsg ? 'text-red-400' : (uploadSuccess ? 'text-green-400' : 'text-gray-500')}`} />
+          <h4 className={`text-sm font-semibold mb-1 ${errorMsg ? 'text-red-400' : 'text-white'}`}>
+            {errorMsg ? errorMsg : (uploadSuccess ? 'Upload Successful!' : 'Import Billing Excel')}
           </h4>
           <p className="text-xs text-gray-500 mb-4">
             Supports Anthropic & Moonshot CSV exports<br/>
