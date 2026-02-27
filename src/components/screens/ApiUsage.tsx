@@ -42,15 +42,31 @@ export function ApiUsage() {
   ]);
 
   const parseExcel = (text: string): MonthlySpend[] | null => {
+    // DEBUG: Log everything
+    console.log('=== PARSE ATTEMPT ===');
+    console.log('Text length:', text?.length);
+    console.log('First 200 chars:', text?.slice(0, 200));
+    console.log('First line:', text?.split('\n')[0]);
+    
     // Simple CSV/TSV parser for Excel exports
     const lines = text.trim().split('\n');
-    if (lines.length < 2) return null;
+    console.log('Total lines:', lines.length);
+    if (lines.length < 2) {
+      console.log('ERROR: Less than 2 lines');
+      return null;
+    }
 
     // Try to detect format
     const firstLine = lines[0];
+    console.log('Detecting format...');
+    console.log('First line:', firstLine);
+    
     const isMoonshotFormat = firstLine.includes('Time Range') && firstLine.includes('Deduction');
+    console.log('Is Moonshot?', isMoonshotFormat);
     const isAnthropicCostFormat = firstLine.includes('usage_date_utc') && firstLine.includes('cost_usd');
+    console.log('Is Anthropic Cost?', isAnthropicCostFormat);
     const isAnthropicTokenFormat = firstLine.includes('usage_date_utc') && firstLine.includes('usage_input_tokens');
+    console.log('Is Anthropic Token?', isAnthropicTokenFormat);
     
     if (isAnthropicCostFormat) {
       // Parse Anthropic cost CSV
@@ -118,6 +134,7 @@ export function ApiUsage() {
     
     // OpenRouter daily summary format
     const isOpenRouterDaily = firstLine.includes('Date') && firstLine.includes('Slug') && firstLine.includes('Usage');
+    console.log('Is OpenRouter Daily?', isOpenRouterDaily);
     if (isOpenRouterDaily) {
       const data: MonthlySpend[] = [];
       
@@ -148,6 +165,7 @@ export function ApiUsage() {
     
     // OpenRouter detailed format (per-request)
     const isOpenRouterDetailed = firstLine.includes('generation_id') && firstLine.includes('cost_total');
+    console.log('Is OpenRouter Detailed?', isOpenRouterDetailed);
     if (isOpenRouterDetailed) {
       const data: MonthlySpend[] = [];
       const dailyTotals: Record<string, { amount: number; tokensIn: number; tokensOut: number }> = {};
@@ -210,6 +228,7 @@ export function ApiUsage() {
       return data;
     }
     
+    console.log('ERROR: No format matched!');
     return null;
   };
 
